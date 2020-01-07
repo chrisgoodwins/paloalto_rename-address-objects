@@ -2,7 +2,7 @@
 #
 # Script:       rename-addr-objects.py
 #
-# Author:       Chris Goodwin <cgoodwin@paloaltonetworks.com>
+# Author:       Chris Goodwin <chrisgoodwins@gmail.com>
 #
 # Description:  Checks for IP address matches between an address object list
 #               (in csv format) provided by the user, and the set of address
@@ -40,49 +40,29 @@ except ImportError:
 # Prompts the user to enter the IP/FQDN of a firewall to retrieve the api key
 def getfwipfqdn():
     while True:
-        try:
-            fwipraw = input("\nPlease enter Panorama/firewall IP or FQDN: ")
-            ipr = re.match(r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$", fwipraw)
-            fqdnr = re.match(r"(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}$)", fwipraw)
-            if ipr:
-                break
-            elif fqdnr:
-                break
-            else:
-                print("\nThere was something wrong with your entry. Please try again...\n")
-        except:
-            print("\nThere was some kind of problem entering your IP or FQDN. Please try again...\n")
+        fwipraw = input("\nPlease enter Panorama/firewall IP or FQDN: ")
+        ipr = re.match(r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$", fwipraw)
+        fqdnr = re.match(r"(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}$)", fwipraw)
+        if ipr:
+            break
+        elif fqdnr:
+            break
+        else:
+            print("\nThere was something wrong with your entry. Please try again...\n")
     return fwipraw
 
 
-# Prompts the user to enter their username to retrieve the api key
-def getuname():
+# Prompts the user to enter a username and password
+def getCreds():
     while True:
-        try:
-            username = input("Please enter your user name: ")  # 3 - 24 characters {3,24}
-            usernamer = re.match(r"^[a-zA-Z0-9_-]{3,24}$", username)
-            if usernamer:
-                break
-            else:
-                print("\nThere was something wrong with your entry. Please try again...\n")
-        except:
-            print("\nThere was some kind of problem entering your user name. Please try again...\n")
-    return username
-
-
-# Prompts the user to enter their password to retrieve the api key
-def getpassword():
-    while True:
-        try:
+        username = input("Please enter your user name: ")
+        usernamer = re.match(r"^[\w-]{3,24}$", username)
+        if usernamer:
             password = getpass.getpass("Please enter your password: ")
-            passwordr = re.match(r"^.{5,50}$", password)  # simple validate PANOS has no password characterset restrictions
-            if passwordr:
-                break
-            else:
-                print("\nThere was something wrong with your entry. Please try again...\n")
-        except:
-            print("\nThere was some kind of problem entering your password. Please try again...\n")
-    return password
+            break
+        else:
+            print("\nThere was something wrong with your entry. Please try again...\n")
+    return username, password
 
 
 # Retrieves the user's api key
@@ -90,8 +70,7 @@ def getkey(fwip):
     while True:
         try:
             fwipgetkey = fwip
-            username = getuname()
-            password = getpassword()
+            username, password = getCreds()
             keycall = "https://%s/api/?type=keygen&user=%s&password=%s" % (fwipgetkey, username, password)
             r = requests.get(keycall, verify=False)
             tree = ET.fromstring(r.text)
@@ -101,7 +80,7 @@ def getkey(fwip):
             else:
                 print("\nYou have entered an incorrect username or password. Please try again...\n")
         except requests.exceptions.ConnectionError:
-            print("\nThere was a problem connecting to the firewall.  Please check the IP or FQDN and try again...\n")
+            print("\nThere was a problem connecting to the firewall. Please check the address and try again...\n")
             exit()
     return apikey
 
